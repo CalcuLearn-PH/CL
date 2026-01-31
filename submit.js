@@ -387,7 +387,7 @@ form.addEventListener("submit", async function (e) {
                 downloadLinkEl.textContent = `Download Answer Key (${simFileBase})`;
               }
 
-              setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+              setTimeout(() => window.URL.revokeObjectURL(url), 300000);
             } else {
               if (downloadLinkEl) {
                 downloadLinkEl.href = encodeURI(simFilePath);
@@ -441,7 +441,6 @@ cancelButton.addEventListener("click", function () {
 
   const dlLink = document.getElementById("downloadAnswerKeyLink");
   if (dlLink) {
-    dlLink.removeAttribute("download");
     dlLink.textContent = "Download Answer Key";
   }
 });
