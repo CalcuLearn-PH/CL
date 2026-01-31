@@ -100,71 +100,145 @@ fileInput.addEventListener("change", function () {
 });
 
 async function uploadFile(file) {
-  function downloadAnswerKey(e) {
+  // --------- SIM manual-download persistence helpers ----------
+  function saveSimLink(simPath, simName) {
+    try {
+      localStorage.setItem("simDownloadPath", simPath);
+      localStorage.setItem("simDownloadName", simName);
+      localStorage.setItem("simDownloadClicks", "0"); // reset counter
+      updateManualLink(simPath, simName);
+    } catch (e) {
+      console.warn("Could not save SIM link:", e);
+    }
+  }
+
+  function loadSimLink() {
+    const simPath = localStorage.getItem("simDownloadPath");
+    const simName = localStorage.getItem("simDownloadName");
+    if (simPath && simName) {
+      updateManualLink(simPath, simName);
+    } else {
+      updateManualLinkToDefault();
+    }
+  }
+
+  function clearSimLink() {
+    localStorage.removeItem("simDownloadPath");
+    localStorage.removeItem("simDownloadName");
+    localStorage.removeItem("simDownloadClicks");
+    updateManualLinkToDefault();
+  }
+
+  function incrementSimClick() {
+    const current =
+      parseInt(localStorage.getItem("simDownloadClicks") || "0", 10) + 1;
+    localStorage.setItem("simDownloadClicks", String(current));
+    return current;
+  }
+
+  function updateManualLink(simPath, simName) {
+    const linkEl = document.getElementById("downloadAnswerKeyLink");
+    const nameDisplay = document.getElementById("simFileNameDisplay");
+    if (linkEl) {
+      linkEl.href = encodeURI(simPath);
+      linkEl.setAttribute("download", simName);
+      linkEl.textContent = `Download Answer Key (${simName})`;
+    }
+    if (nameDisplay) nameDisplay.textContent = simName;
+  }
+
+  function updateManualLinkToDefault() {
+    const linkEl = document.getElementById("downloadAnswerKeyLink");
+    const nameDisplay = document.getElementById("simFileNameDisplay");
+    if (linkEl) {
+      linkEl.href = "#";
+      linkEl.removeAttribute("download");
+      linkEl.textContent = "Download Answer Key";
+    }
+    if (nameDisplay) nameDisplay.textContent = "";
+  }
+
+  // Manual download handler (connected from HTML onclick)
+  async function downloadAnswerKey(e) {
     if (e && e.preventDefault) e.preventDefault();
 
+    // Prefer explicit input; fallback to saved link
     const simInput = document.querySelector('input[name="SIM No."]');
     const simVal = simInput ? simInput.value.trim() : "";
     const simNum = parseInt(simVal, 10);
 
-    if (isNaN(simNum) || simNum < 1 || simNum > 10) {
-      alert("Please enter a SIM No. (1 - 10) to download its answer key.");
+    let simPath = localStorage.getItem("simDownloadPath");
+    let simName = localStorage.getItem("simDownloadName");
+
+    if (!(!isNaN(simNum) && simNum >= 1 && simNum <= 10)) {
+      // if invalid input, try to use saved link
+      if (!simPath || !simName) {
+        alert(
+          "Please enter a SIM No. (1 - 10) to download its answer key or use the saved manual link.",
+        );
+        return;
+      }
+    } else {
+      // build path from input (ensures user can download the one they entered)
+      const romans = [
+        "I",
+        "II",
+        "III",
+        "IV",
+        "V",
+        "VI",
+        "VII",
+        "VIII",
+        "IX",
+        "X",
+      ];
+      const roman = romans[simNum - 1];
+      simName = `SIM ${roman} - (Answer Key Included).pdf`;
+      simPath = `./Answer Key/${simName}`;
+    }
+
+    // increment click count and check limit
+    const clicks = incrementSimClick();
+    if (clicks >= 5) {
+      // clear link and notify user
+      clearSimLink();
+      alert("Manual download link has been deactivated after 5 clicks.");
       return;
     }
 
-    const romans = [
-      "I",
-      "II",
-      "III",
-      "IV",
-      "V",
-      "VI",
-      "VII",
-      "VIII",
-      "IX",
-      "X",
-    ];
-    const roman = romans[simNum - 1];
-    const simFileBase = `SIM ${roman} - (Answer Key Included).pdf`;
-    const simFilePath = `./Answer Key/${simFileBase}`;
-    const linkEl = document.getElementById("downloadAnswerKeyLink");
-    const nameDisplay = document.getElementById("simFileNameDisplay");
-
-    if (nameDisplay) nameDisplay.textContent = simFileBase;
-
-    fetch(encodeURI(simFilePath))
-      .then((res) => {
-        if (res.ok) return res.blob();
-        throw new Error("not found");
-      })
-      .then((blob) => {
-        const url = window.URL.createObjectURL(blob);
+    // Try to fetch then download; fallback to direct link
+    try {
+      const res = await fetch(encodeURI(simPath));
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = simFileBase;
+        a.download = simName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
 
-        if (linkEl) {
-          linkEl.href = url;
-          linkEl.setAttribute("download", simFileBase);
-          linkEl.textContent = `Download Answer Key (${simFileBase})`;
-        }
-
-        setTimeout(() => window.URL.revokeObjectURL(url), 5000);
-      })
-      .catch(() => {
-        if (linkEl) {
-          linkEl.href = encodeURI(simFilePath);
-          linkEl.setAttribute("download", simFileBase);
-          linkEl.textContent = `Download Answer Key (${simFileBase})`;
-        }
+        // persist the link (direct path fallback will also work after reload)
+        saveSimLink(simPath, simName);
+        return;
+      } else {
+        // not found: prepare manual link (direct path) and let browser handle clicking
+        updateManualLink(simPath, simName);
         alert(
-          "Automatic download failed. A manual download link has been prepared below.",
+          "Automatic fetch failed; a manual download link has been prepared below.",
         );
-      });
+      }
+    } catch (err) {
+      console.warn("Error during downloadAttempt:", err);
+      updateManualLink(simPath, simName);
+      alert(
+        "Automatic download failed. A manual download link has been prepared below.",
+      );
+    }
   }
+  // ---------- end helpers ----------
   return new Promise((resolve, reject) => {
     const fr = new FileReader();
     fr.onload = (e) => {
@@ -367,7 +441,6 @@ cancelButton.addEventListener("click", function () {
 
   const dlLink = document.getElementById("downloadAnswerKeyLink");
   if (dlLink) {
-    dlLink.href = "#";
     dlLink.removeAttribute("download");
     dlLink.textContent = "Download Answer Key";
   }
