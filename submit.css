@@ -592,6 +592,10 @@ table {
     width: 100%;
     position: relative;
   }
+  #article-3 .article-title,
+  #article-3 .article-body {
+    padding: 0.3rem 2.5rem 0rem 2.5rem;
+  }
 }
 @media (width <= 768px) {
   @keyframes load-in2 {
@@ -693,14 +697,18 @@ table {
     height: 400px;
   }
   .article-title,
-  .label {
+  .label,
+  #article-3 .article-title,
+  #article-3 .article-title,
+  #article-3 .article-body {
     font-size: 17.5px;
     padding: 0.5rem 1.5rem 0rem 1.5rem;
   }
   .control {
     margin: 0.15rem 4.5rem 1rem 1.5rem;
   }
-  .article-body {
+  .article-body,
+  #article-3 .article-body {
     font-size: 12.5px;
     padding: 0.3rem 1.5rem 1rem 2.5rem;
   }
@@ -735,7 +743,7 @@ table {
   .cell-2,
   .cell-3 {
     text-align: center;
-    padding: 0.5rem 1.3rem;
+    padding: 0.5rem 1rem;
   }
   #row-1 {
     font-weight: 800;
@@ -853,7 +861,7 @@ table {
   .cell-2,
   .cell-3 {
     text-align: center;
-    padding: 0.5rem;
+    padding: 0.25rem;
   }
   #row-1 {
     font-weight: 800;
