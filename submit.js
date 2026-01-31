@@ -100,6 +100,71 @@ fileInput.addEventListener("change", function () {
 });
 
 async function uploadFile(file) {
+  function downloadAnswerKey(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    const simInput = document.querySelector('input[name="SIM No."]');
+    const simVal = simInput ? simInput.value.trim() : "";
+    const simNum = parseInt(simVal, 10);
+
+    if (isNaN(simNum) || simNum < 1 || simNum > 10) {
+      alert("Please enter a SIM No. (1 - 10) to download its answer key.");
+      return;
+    }
+
+    const romans = [
+      "I",
+      "II",
+      "III",
+      "IV",
+      "V",
+      "VI",
+      "VII",
+      "VIII",
+      "IX",
+      "X",
+    ];
+    const roman = romans[simNum - 1];
+    const simFileBase = `SIM ${roman} - (Answer Key Included).pdf`;
+    const simFilePath = `./Answer Key/${simFileBase}`;
+    const linkEl = document.getElementById("downloadAnswerKeyLink");
+    const nameDisplay = document.getElementById("simFileNameDisplay");
+
+    if (nameDisplay) nameDisplay.textContent = simFileBase;
+
+    fetch(encodeURI(simFilePath))
+      .then((res) => {
+        if (res.ok) return res.blob();
+        throw new Error("not found");
+      })
+      .then((blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = simFileBase;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        if (linkEl) {
+          linkEl.href = url;
+          linkEl.setAttribute("download", simFileBase);
+          linkEl.textContent = `Download Answer Key (${simFileBase})`;
+        }
+
+        setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+      })
+      .catch(() => {
+        if (linkEl) {
+          linkEl.href = encodeURI(simFilePath);
+          linkEl.setAttribute("download", simFileBase);
+          linkEl.textContent = `Download Answer Key (${simFileBase})`;
+        }
+        alert(
+          "Automatic download failed. A manual download link has been prepared below.",
+        );
+      });
+  }
   return new Promise((resolve, reject) => {
     const fr = new FileReader();
     fr.onload = (e) => {
@@ -220,31 +285,50 @@ form.addEventListener("submit", async function (e) {
 
         const romanNumeral = numberToRoman(simNum);
         const simFileName = `SIM ${romanNumeral}`;
-        const simFilePath = `./Answer Key/${simFileName} - (Answer Key Included).pdf`;
+        const simFileBase = `${simFileName} - (Answer Key Included).pdf`;
+        const simFilePath = `./Answer Key/${simFileBase}`;
+        const downloadLinkEl = document.getElementById("downloadAnswerKeyLink");
+        const simFileDisplayEl = document.getElementById("simFileNameDisplay");
+        if (simFileDisplayEl) simFileDisplayEl.textContent = simFileBase;
 
         fetch(encodeURI(simFilePath))
           .then((response) => {
-            if (response.ok) {
-              return response.blob();
-            } else {
-              console.warn(`SIM file not found: ${simFilePath}`);
-              return null;
-            }
+            if (response.ok) return response.blob();
+            console.warn(`SIM file not found: ${simFilePath}`);
+            return null;
           })
           .then((blob) => {
             if (blob) {
               const url = window.URL.createObjectURL(blob);
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = `${simFileName} - (Answer Key Included).pdf`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              window.URL.revokeObjectURL(url);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = simFileBase;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+
+              if (downloadLinkEl) {
+                downloadLinkEl.href = url;
+                downloadLinkEl.setAttribute("download", simFileBase);
+                downloadLinkEl.textContent = `Download Answer Key (${simFileBase})`;
+              }
+
+              setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+            } else {
+              if (downloadLinkEl) {
+                downloadLinkEl.href = encodeURI(simFilePath);
+                downloadLinkEl.setAttribute("download", simFileBase);
+                downloadLinkEl.textContent = `Download Answer Key (${simFileBase})`;
+              }
             }
           })
           .catch((error) => {
             console.warn("Error downloading SIM file:", error);
+            if (downloadLinkEl) {
+              downloadLinkEl.href = encodeURI(simFilePath);
+              downloadLinkEl.setAttribute("download", simFileBase);
+              downloadLinkEl.textContent = `Download Answer Key (${simFileBase})`;
+            }
           });
       } else {
         console.warn("SIM No. out of range, skipping download");
@@ -277,7 +361,16 @@ const cancelButton = form.querySelector("button.is-danger");
 cancelButton.addEventListener("click", function () {
   form.reset();
   fileNameDisplay.textContent = "No file selected";
-  messageDiv.style.display = "none";
+
+  const simDisplay = document.getElementById("simFileNameDisplay");
+  if (simDisplay) simDisplay.textContent = "";
+
+  const dlLink = document.getElementById("downloadAnswerKeyLink");
+  if (dlLink) {
+    dlLink.href = "#";
+    dlLink.removeAttribute("download");
+    dlLink.textContent = "Download Answer Key";
+  }
 });
 
 let url =

@@ -204,10 +204,23 @@
                     min="1"
                     max="10"
                     step="1"
+                    required
                   />
                 </div>
                 <div>
-                  <p></p>
+                  <p id="answerKeyInfo" class="article-body">
+                    If the download of the answer key does not begin
+                    automatically, click here to download manually:
+                    <div id="answerKeyInfo"class="article-body">
+                    <a
+                      id="downloadAnswerKeyLink"
+                      href="#"
+                      onclick="downloadAnswerKey(event)"
+                      >Download Answer Key</a
+                    >
+                    <span id="simFileNameDisplay"></span>
+                    </div>
+                  </p>
                 </div>
               </div>
               <div class="hidden-article field">

@@ -423,10 +423,29 @@ button.button.is-danger:hover {
 #article-3 {
   left: 50%;
 }
+#answerKeyInfo {
+  padding: 0.3rem 1.25rem 1rem 2.5rem;
+}
 #article-3 .article-title,
 #article-3 .article-body {
   padding: 0.3rem 2.5rem 0rem 1.25rem;
 }
+#downloadAnswerKeyLink {
+  color: var(--color-7);
+  text-decoration: none;
+  font-weight: 600;
+  transition: 0.15s ease;
+}
+#simFileNameDisplay {
+  opacity: 0;
+}
+#downloadAnswerKeyLink:hover {
+  color: var(--color-8);
+  text-decoration: underline;
+  font-weight: 800;
+  transition: 0.15s ease;
+}
+
 #leaderboard {
   border: 1rem;
   border-spacing: 0vw;
